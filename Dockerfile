@@ -1,12 +1,23 @@
 FROM php:8.2-apache
 
 RUN apt-get update && apt-get install -y \
-    git unzip zip curl libzip-dev
+    git unzip zip curl libzip-dev libpng-dev \
+    libonig-dev libxml2-dev
 
 RUN docker-php-ext-install pdo pdo_mysql zip
 
-COPY . /var/www/html/
+RUN a2enmod rewrite
 
 WORKDIR /var/www/html
+
+COPY . /var/www/html
+
+RUN chown -R www-data:www-data /var/www/html
+
+RUN sed -i 's!/var/www/html!/var/www/html/public!g' \
+    /etc/apache2/sites-available/000-default.conf
+
+RUN sed -i '/<Directory \/var\/www\/>/,/<\/Directory>/ s/AllowOverride None/AllowOverride All/' \
+    /etc/apache2/apache2.conf
 
 EXPOSE 80
