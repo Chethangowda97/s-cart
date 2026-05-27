@@ -3,6 +3,7 @@ pipeline {
 
     environment {
         DOCKER_IMAGE = "chethan97/s-cart"
+        CONTAINER_NAME = "s-cart-container"
     }
 
     stages {
@@ -27,7 +28,9 @@ pipeline {
                     passwordVariable: 'DOCKER_PASS'
                 )]) {
 
-                    sh 'echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin'
+                    sh '''
+                    echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin
+                    '''
                 }
             }
         }
@@ -42,15 +45,26 @@ pipeline {
             steps {
 
                 sh '''
-                docker stop s-cart-container || true
-                docker rm s-cart-container || true
+                docker stop $CONTAINER_NAME || true
+                docker rm $CONTAINER_NAME || true
 
                 docker run -d \
-                  --name s-cart-container \
-                  -p 80:80 \
+                  --name $CONTAINER_NAME \
+                  -p 8081:80 \
                   $DOCKER_IMAGE
                 '''
             }
+        }
+
+    }
+
+    post {
+        success {
+            echo 'CI/CD Pipeline executed successfully!'
+        }
+
+        failure {
+            echo 'Pipeline failed. Check logs.'
         }
     }
 }
