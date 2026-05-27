@@ -3,7 +3,7 @@
         'name' => 's-cart/s-cart',
         'pretty_version' => 'dev-master',
         'version' => 'dev-master',
-        'reference' => 'fb863092335c155876056a4af57b3d5c9aedad2d',
+        'reference' => '0c386349b7bef3e151039437e1a1e3436a92489b',
         'type' => 'project',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -1115,7 +1115,7 @@
         's-cart/s-cart' => array(
             'pretty_version' => 'dev-master',
             'version' => 'dev-master',
-            'reference' => 'fb863092335c155876056a4af57b3d5c9aedad2d',
+            'reference' => '0c386349b7bef3e151039437e1a1e3436a92489b',
             'type' => 'project',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
