@@ -16,7 +16,9 @@ pipeline {
 
         stage('Build Docker Image') {
             steps {
-                sh 'docker build -t $DOCKER_IMAGE .'
+                sh '''
+                docker build -t $DOCKER_IMAGE .
+                '''
             }
         }
 
@@ -37,17 +39,24 @@ pipeline {
 
         stage('Push Docker Image') {
             steps {
-                sh 'docker push $DOCKER_IMAGE'
+                sh '''
+                docker push $DOCKER_IMAGE
+                '''
+            }
+        }
+
+        stage('Remove Old Container') {
+            steps {
+                sh '''
+                docker stop $CONTAINER_NAME || true
+                docker rm $CONTAINER_NAME || true
+                '''
             }
         }
 
         stage('Deploy Container') {
             steps {
-
                 sh '''
-                docker stop $CONTAINER_NAME || true
-                docker rm $CONTAINER_NAME || true
-
                 docker run -d \
                   --name $CONTAINER_NAME \
                   -p 8081:80 \
@@ -56,15 +65,23 @@ pipeline {
             }
         }
 
+        stage('Verify Running Container') {
+            steps {
+                sh '''
+                docker ps
+                '''
+            }
+        }
     }
 
     post {
+
         success {
             echo 'CI/CD Pipeline executed successfully!'
         }
 
         failure {
-            echo 'Pipeline failed. Check logs.'
+            echo 'Pipeline failed. Check Jenkins console logs.'
         }
     }
 }
