@@ -1,31 +1,68 @@
-FROM php:8.2-apache
+FROM php:8.2-fpm
 
+# Install system dependencies
 RUN apt-get update && apt-get install -y \
-    git unzip zip curl libzip-dev libpng-dev \
-    libonig-dev libxml2-dev
+    git \
+    curl \
+    unzip \
+    zip \
+    nginx \
+    libpng-dev \
+    libonig-dev \
+    libxml2-dev \
+    libzip-dev \
+    libjpeg62-turbo-dev \
+    libfreetype6-dev
 
-RUN docker-php-ext-install pdo pdo_mysql zip
-
-RUN a2enmod rewrite
+# Install PHP extensions
+RUN docker-php-ext-install \
+    pdo \
+    pdo_mysql \
+    mbstring \
+    exif \
+    pcntl \
+    bcmath \
+    zip
 
 # Install Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
+# Set working directory
 WORKDIR /var/www/html
 
-COPY . /var/www/html
+# Copy project
+COPY . .
 
-# Install Laravel dependencies
+# Fix git safe directory issue
+RUN git config --global --add safe.directory /var/www/html
+
+# Install dependencies
 RUN composer install --no-interaction --prefer-dist
 
-# Permissions
-RUN chown -R www-data:www-data /var/www/html
+# Laravel permissions
+RUN chmod -R 777 storage bootstrap/cache || true
 
-# Apache public folder setup
-RUN sed -i 's!/var/www/html!/var/www/html/public!g' \
-    /etc/apache2/sites-available/000-default.conf
+# Configure Nginx
+RUN rm /etc/nginx/sites-enabled/default
 
-RUN sed -i '/<Directory \/var\/www\/>/,/<\/Directory>/ s/AllowOverride None/AllowOverride All/' \
-    /etc/apache2/apache2.conf
+RUN echo 'server { \
+    listen 80; \
+    index index.php index.html; \
+    server_name localhost; \
+    root /var/www/html/public; \
+\
+    location / { \
+        try_files $uri $uri/ /index.php?$query_string; \
+    } \
+\
+    location ~ \.php$ { \
+        include snippets/fastcgi-php.conf; \
+        fastcgi_pass 127.0.0.1:9000; \
+        fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name; \
+        include fastcgi_params; \
+    } \
+}' > /etc/nginx/sites-enabled/default
 
 EXPOSE 80
+
+CMD service nginx start && php-fpm
